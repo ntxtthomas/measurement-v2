@@ -1,0 +1,19 @@
+<% content_for :title, "Reports" %>
+<h1>Reports</h1>
+<div class="card" style="padding:0;">
+  <table>
+    <thead><tr><th>Session Date</th><th>Classroom</th><th>Status</th><th>Generated</th><th></th></tr></thead>
+    <tbody>
+      <% @reports.each do |report| %>
+        <tr>
+          <%# SMELL: report.observation_session.classroom — N+1 chain %>
+          <td><%= report.observation_session.observed_on.strftime("%b %d, %Y") %></td>
+          <td><%= link_to report.observation_session.classroom.name, classroom_path(report.observation_session.classroom) %></td>
+          <td><span class="badge badge-<%= report.status %>"><%= report.status %></span></td>
+          <td><%= time_ago_in_words(report.created_at) %> ago</td>
+          <td><%= link_to "View", report_path(report), class: "btn btn-sm btn-primary" if report.complete? %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

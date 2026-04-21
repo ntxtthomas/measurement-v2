@@ -1,0 +1,62 @@
+<%# DELIBERATE HOTSPOT: This view fires N+1 queries for every phase.
+    For each @phase, completion_percentage calls total_task_count and done_task_count,
+    each of which hits the DB. 7 phases × 2 queries = 14+ queries just for the progress bars.
+    The epics loop inside each phase card makes it worse. %>
+
+<% content_for :title, "Engineering Dashboard" %>
+
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+  <h1>⚙ Engineering Dashboard</h1>
+  <p style="color:#64748b; font-size:.85rem;">Track the phased improvement effort</p>
+</div>
+
+<% @phases.each do |phase| %>
+  <div class="card" style="margin-bottom:1.5rem;">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:.75rem;">
+      <div>
+        <h2 style="margin:0;">
+          <%= link_to phase.name, engineering_phase_path(phase), style: "color:#1e293b;" %>
+        </h2>
+        <p style="color:#64748b; font-size:.85rem; margin-top:.2rem;"><%= phase.description %></p>
+      </div>
+      <div style="text-align:right;">
+        <%# SMELL: completion_percentage makes 2 DB queries per phase call %>
+        <span style="font-size:1.25rem; font-weight:700; color:<%= phase.color %>;">
+          <%= phase.completion_percentage %>%
+        </span>
+        <br>
+        <small style="color:#64748b;"><%= phase.status_label %></small>
+      </div>
+    </div>
+
+    <div class="progress-bar-outer" style="margin-bottom:1rem;">
+      <div class="progress-bar-inner"
+           style="width:<%= phase.completion_percentage %>%; background:<%= phase.color %>;"></div>
+    </div>
+
+    <%# SMELL: phase.epics fires another query, then each epic.stories fires more %>
+    <div style="display:flex; flex-wrap:wrap; gap:.75rem;">
+      <% phase.epics.each do |epic| %>
+        <div style="flex:1; min-width:200px; background:#f8fafc; border:1px solid #e2e8f0;
+                    border-radius:5px; padding:.75rem;">
+          <strong style="font-size:.9rem;"><%= epic.name %></strong>
+          <div style="font-size:.8rem; color:#64748b; margin:.25rem 0;"><%= epic.completion_percentage %>% complete</div>
+          <div class="progress-bar-outer"><div class="progress-bar-inner" style="width:<%= epic.completion_percentage %>%;"></div></div>
+          <% epic.stories.each do |story| %>
+            <div style="margin-top:.5rem; font-size:.8rem;">
+              <div style="display:flex; justify-content:space-between; color:#475569;">
+                <span><%= story.name %></span>
+                <span><%= story.completion_percentage %>%</span>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+
+    <%# Task counts row  — each total_task_count and done_task_count is another DB hit %>
+    <div style="margin-top:.75rem; font-size:.8rem; color:#94a3b8;">
+      <%= phase.done_task_count %> / <%= phase.total_task_count %> tasks complete
+    </div>
+  </div>
+<% end %>

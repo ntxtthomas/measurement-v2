@@ -1,0 +1,19 @@
+<nav>
+  <div class="container" style="display:flex; align-items:center; flex-wrap:wrap; gap:.5rem;">
+    <span class="brand">🔷 Prism</span>
+    <% if logged_in? %>
+      <%= link_to "Dashboard",    root_path %>
+      <%= link_to "Organizations", organizations_path %>
+      <%= link_to "Sessions",     observation_sessions_path %>
+      <%= link_to "Reports",      reports_path %>
+      <%= link_to "⚙ Engineering", engineering_root_path %>
+      <span style="margin-left:auto; color:#94a3b8; font-size:.85rem;">
+        <%= current_user.full_name %>
+        &nbsp;·&nbsp;
+        <%= link_to "Sign out", logout_path, data: { turbo_method: :delete }, style: "color:#94a3b8;" %>
+      </span>
+    <% else %>
+      <%= link_to "Sign in", login_path %>
+    <% end %>
+  </div>
+</nav>

@@ -1,0 +1,51 @@
+<% content_for :title, @school.name %>
+<p style="color:#64748b;">
+  <%= link_to @school.organization.name, organization_path(@school.organization) %> /
+  <%= @school.name %>
+</p>
+
+<h1><%= @school.name %></h1>
+
+<div style="display:flex; gap:2rem; margin-bottom:1.5rem;">
+  <div><strong><%= @classrooms.count %></strong> <span style="color:#64748b;">classrooms</span></div>
+  <div><strong><%= @teachers.count %></strong>   <span style="color:#64748b;">teachers</span></div>
+</div>
+
+<h2>Classrooms</h2>
+<div class="card" style="padding:0;">
+  <table>
+    <thead>
+      <tr><th>Name</th><th>Grade</th><th>Teacher</th><th>Students</th><th>Last Observed</th><th></th></tr>
+    </thead>
+    <tbody>
+      <% @classrooms.each do |classroom| %>
+        <tr>
+          <td><%= link_to classroom.name, classroom_path(classroom) %></td>
+          <td><%= classroom.grade_level %></td>
+          <%# SMELL: classroom.teacher triggers a query per row — N+1 %>
+          <td><%= classroom.teacher ? link_to(classroom.teacher.full_name, teacher_path(classroom.teacher)) : "—" %></td>
+          <td><%= classroom.students.count %></td>
+          <td><%= classroom.last_observed_at&.strftime("%b %d, %Y") || "Never" %></td>
+          <td><%= link_to "View", classroom_path(classroom), class: "btn btn-sm btn-primary" %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+
+<h2>Teachers</h2>
+<div class="card" style="padding:0;">
+  <table>
+    <thead><tr><th>Name</th><th>Sessions</th><th>Avg Score</th><th></th></tr></thead>
+    <tbody>
+      <% @teachers.each do |t| %>
+        <tr>
+          <td><%= link_to t.full_name, teacher_path(t) %></td>
+          <td><%= t.total_sessions %></td>
+          <td><%= t.average_score_cache ? number_with_precision(t.average_score_cache, precision: 2) : "—" %></td>
+          <td><%= link_to "View", teacher_path(t), class: "btn btn-sm btn-primary" %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

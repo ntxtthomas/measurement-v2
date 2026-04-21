@@ -1,0 +1,55 @@
+<% content_for :title, @classroom.name %>
+<%# SMELL: classroom.school.organization — Law of Demeter chain renders inline %>
+<p style="color:#64748b;">
+  <%= link_to @classroom.school.organization.name, organization_path(@classroom.school.organization) %> /
+  <%= link_to @classroom.school.name, school_path(@classroom.school) %> /
+  <%= @classroom.name %>
+</p>
+
+<h1><%= @classroom.name %></h1>
+<p style="color:#64748b; margin-bottom:1rem;">
+  Grade <%= @classroom.grade_level %> &nbsp;·&nbsp;
+  <strong><%= @students.count %></strong> students
+</p>
+
+<%= link_to "New Observation Session",
+      new_observation_session_path(classroom_id: @classroom.id),
+      class: "btn btn-primary", style: "margin-bottom:1.5rem;" %>
+
+<h2>Students (<%= @students.count %>)</h2>
+<div class="card" style="padding:0;">
+  <table>
+    <thead><tr><th>Name</th><th>DOB</th><th></th></tr></thead>
+    <tbody>
+      <% @students.each do |s| %>
+        <tr>
+          <td><%= link_to s.full_name, student_path(s) %></td>
+          <td><%= s.date_of_birth&.strftime("%b %d, %Y") || "—" %></td>
+          <td></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+
+<h2>Observation Sessions (<%= @sessions.count %>)</h2>
+<%# SMELL: No pagination — all sessions rendered regardless of count %>
+<div class="card" style="padding:0;">
+  <table>
+    <thead>
+      <tr><th>Date</th><th>Observer</th><th>Status</th><th>Avg Score</th><th></th></tr>
+    </thead>
+    <tbody>
+      <% @sessions.each do |s| %>
+        <tr>
+          <td><%= s.observed_on.strftime("%b %d, %Y") %></td>
+          <%# SMELL: s.observer.user — N+1 chain %>
+          <td><%= s.observer.user.full_name %></td>
+          <td><span class="badge badge-<%= s.status %>"><%= s.status.humanize %></span></td>
+          <td><%= s.average_score ? number_with_precision(s.average_score, precision: 2) : "—" %></td>
+          <td><%= link_to "View", observation_session_path(s), class: "btn btn-sm btn-primary" %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

@@ -1,0 +1,21 @@
+default: &default
+  adapter: postgresql
+  encoding: unicode
+  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+  username: <%= ENV.fetch("DB_USERNAME", "terrythomas") %>
+  password: <%= ENV.fetch("DB_PASSWORD", "") %>
+  host: <%= ENV.fetch("DB_HOST", "localhost") %>
+
+development:
+  <<: *default
+  database: prism_development
+
+test:
+  <<: *default
+  database: prism_test
+
+production:
+  <<: *default
+  database: prism_production
+  username: prism
+  password: <%= ENV["PRISM_DATABASE_PASSWORD"] %>

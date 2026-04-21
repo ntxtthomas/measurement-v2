@@ -1,0 +1,89 @@
+<%# DELIBERATE HOTSPOT: This view triggers N+1 queries for every org in @org_stats
+    because @recent_sessions is rendered without eager loading below.
+    Watch the development log: you will see 1 + N queries for observer.user,
+    classroom.school, etc. for each recent session row. %>
+
+<% content_for :title, "Dashboard" %>
+
+<h1>Dashboard</h1>
+
+<%# ── Global stats ────────────────────────────────────────────────────────── %>
+<div class="stat-row">
+  <div class="stat-card">
+    <div class="number"><%= @total_sessions %></div>
+    <div class="label">Total Sessions</div>
+  </div>
+  <div class="stat-card">
+    <div class="number"><%= @total_finalized %></div>
+    <div class="label">Finalized</div>
+  </div>
+  <div class="stat-card">
+    <div class="number"><%= @total_students %></div>
+    <div class="label">Students</div>
+  </div>
+  <div class="stat-card">
+    <div class="number"><%= number_with_precision(@overall_average, precision: 2) %></div>
+    <div class="label">Avg Score (all time)</div>
+  </div>
+</div>
+
+<%# ── Organization rollup — the N+1 hotspot ──────────────────────────────── %>
+<h2>Organizations</h2>
+<div class="card" style="padding:0;">
+  <table>
+    <thead>
+      <tr>
+        <th>Organization</th>
+        <th>Schools</th>
+        <th>Sessions</th>
+        <th>Finalized</th>
+        <th>Students</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @org_stats.each do |stat| %>
+        <tr>
+          <td><strong><%= link_to stat[:org].name, organization_path(stat[:org]) %></strong></td>
+          <td><%= stat[:school_count] %></td>
+          <td><%= stat[:session_count] %></td>
+          <td><%= stat[:finalized_count] %></td>
+          <td><%= stat[:student_count] %></td>
+          <td><%= link_to "View →", organization_path(stat[:org]), class: "btn btn-sm btn-primary" %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+
+<%# ── Recent sessions — each row will trigger extra queries in the view ───── %>
+<h2>Recent Sessions</h2>
+<div class="card" style="padding:0;">
+  <table>
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Classroom</th>
+        <th>Teacher</th>
+        <th>Observer</th>
+        <th>Status</th>
+        <th>Avg Score</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @recent_sessions.each do |s| %>
+        <tr>
+          <td><%= s.observed_on.strftime("%b %d, %Y") %></td>
+          <%# SMELL: s.classroom, s.classroom.school, s.teacher, s.observer.user — all N+1 below %>
+          <td><%= link_to s.classroom.name, classroom_path(s.classroom) %></td>
+          <td><%= link_to s.teacher.full_name, teacher_path(s.teacher) %></td>
+          <td><%= s.observer.user.full_name %></td>
+          <td><span class="badge badge-<%= s.status %>"><%= s.status.humanize %></span></td>
+          <td><%= s.average_score ? number_with_precision(s.average_score, precision: 2) : "—" %></td>
+          <td><%= link_to "View", observation_session_path(s), class: "btn btn-sm btn-primary" %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

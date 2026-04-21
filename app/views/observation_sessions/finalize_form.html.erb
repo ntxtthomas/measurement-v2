@@ -1,0 +1,65 @@
+<%# DELIBERATE HOTSPOT: Finalize form is where the fat controller action is triggered.
+    This is also where row-by-row score submission happens. %>
+
+<% content_for :title, "Finalize Session" %>
+<h1>Finalize Observation Session</h1>
+<p style="color:#64748b; margin-bottom:1.5rem;">
+  <%= @session.classroom.name %> · <%= @session.observed_on.strftime("%B %d, %Y") %>
+</p>
+
+<%= form_with url: finalize_observation_session_path(@session), method: :post, local: true do |f| %>
+
+  <%# ── Dimension Scores ────────────────────────────────────────────────────── %>
+  <h2>Scores</h2>
+  <% @dimensions.group_by(&:category).each do |category, dims| %>
+    <div class="card">
+      <h3><%= category %></h3>
+      <% dims.each do |dim| %>
+        <% current_score = @scores_by_dimension[dim.id]&.score %>
+        <div style="margin-bottom:1rem;">
+          <label><%= dim.name %> (<code><%= dim.code %></code>)</label>
+          <p style="font-size:.8rem; color:#64748b; margin-bottom:.3rem;"><%= dim.description %></p>
+          <%# Score 1–7 selector — magic numbers baked into the view %>
+          <div style="display:flex; gap:.5rem; flex-wrap:wrap;">
+            <% (dim.min_score..dim.max_score).each do |val| %>
+              <label style="cursor:pointer; display:flex; align-items:center; gap:.25rem;">
+                <input type="radio"
+                       name="scores[<%= dim.id %>]"
+                       value="<%= val %>"
+                       <%= "checked" if current_score == val %>>
+                <span class="badge badge-<%= score_level_class(val) %>"><%= val %></span>
+              </label>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+
+  <%# ── Notes ──────────────────────────────────────────────────────────────── %>
+  <h2>Add Notes</h2>
+  <div class="card">
+    <%# Simple inline note form — submits as notes[] array %>
+    <div id="notes-container">
+      <div class="note-entry" style="margin-bottom:1rem; border-bottom:1px solid #e2e8f0; padding-bottom:1rem;">
+        <label>Note 1</label>
+        <textarea name="notes[][content]" style="width:100%; min-height:70px; padding:.4rem; border:1px solid #cbd5e1; border-radius:4px;"></textarea>
+        <label style="margin-top:.5rem;">Tag students (optional)</label>
+        <select name="notes[][student_ids][]" multiple style="width:100%;">
+          <% @students.each do |s| %>
+            <option value="<%= s.id %>"><%= s.full_name %></option>
+          <% end %>
+        </select>
+      </div>
+    </div>
+    <small style="color:#64748b;">Only filled notes will be saved.</small>
+  </div>
+
+  <div style="margin-top:1.5rem;">
+    <%= f.submit "Finalize Session", class: "btn btn-primary",
+          data: { confirm: "Are you sure? This cannot be undone." } %>
+    &nbsp;
+    <%= link_to "Cancel", observation_session_path(@session), style: "color:#64748b;" %>
+  </div>
+
+<% end %>

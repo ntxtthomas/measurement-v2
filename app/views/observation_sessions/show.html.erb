@@ -1,0 +1,104 @@
+<% content_for :title, @session.classroom.name + " — " + @session.observed_on.strftime("%b %d") %>
+
+<p style="color:#64748b; margin-bottom:.5rem;">
+  <%= link_to @session.organization_name, organization_path(@session.classroom.school.organization) %> /
+  <%= link_to @session.school_name, school_path(@session.classroom.school) %> /
+  <%= link_to @session.classroom.name, classroom_path(@session.classroom) %>
+</p>
+
+<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem;">
+  <h1>Observation: <%= @session.observed_on.strftime("%B %d, %Y") %></h1>
+  <span class="badge badge-<%= @session.status %>" style="font-size:.95rem; padding:.35rem .8rem;">
+    <%= @session.status.humanize %>
+  </span>
+</div>
+
+<div class="card">
+  <table style="width:auto;">
+    <tr><th>Teacher</th><td><%= link_to @session.teacher.full_name, teacher_path(@session.teacher) %></td></tr>
+    <tr><th>Observer</th><td><%= @session.observer.user.full_name %></td></tr>
+    <tr><th>Classroom</th><td><%= @session.classroom.name %></td></tr>
+    <tr><th>Completion</th><td><%= @session.completion_rate %>%</td></tr>
+    <% if @session.finalized? %>
+      <tr><th>Finalized at</th><td><%= @session.finalized_at.strftime("%b %d, %Y %H:%M") %></td></tr>
+    <% end %>
+  </table>
+</div>
+
+<%# ── Scores ────────────────────────────────────────────────────────────────── %>
+<h2>Scores</h2>
+<div class="card">
+  <% @dimensions.group_by(&:category).each do |category, dims| %>
+    <h3><%= category %></h3>
+    <table style="margin-bottom:1rem;">
+      <thead><tr><th>Dimension</th><th>Code</th><th>Score</th><th>Level</th></tr></thead>
+      <tbody>
+        <% dims.each do |dim| %>
+          <% score = @scores_by_dimension[dim.id] %>
+          <tr>
+            <td><%= dim.name %></td>
+            <td><code><%= dim.code %></code></td>
+            <td><%= score&.score || "—" %></td>
+            <%# SMELL: display_score_level helper duplicates classify logic from model %>
+            <td>
+              <% if score %>
+                <% level = display_score_level(score.score) %>
+                <span class="badge badge-<%= level.downcase %>"><%= level %></span>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+  <% if @session.average_score %>
+    <p><strong>Overall Average:</strong> <%= number_with_precision(@session.average_score, precision: 2) %></p>
+  <% end %>
+</div>
+
+<%# ── Notes ────────────────────────────────────────────────────────────────── %>
+<h2>Notes (<%= @notes.count %>)</h2>
+<% @notes.each do |note| %>
+  <div class="card">
+    <p><%= note.content %></p>
+    <%# SMELL: note.students fires a query per note — N+1 %>
+    <% if note.students.any? %>
+      <p style="margin-top:.5rem; font-size:.85rem; color:#64748b;">
+        Students: <%= note.students.map(&:full_name).join(", ") %>
+      </p>
+    <% end %>
+  </div>
+<% end %>
+
+<%# ── Actions ───────────────────────────────────────────────────────────────── %>
+<% unless @session.finalized? || @session.cancelled? %>
+  <div style="margin-top:1.5rem; display:flex; gap:.75rem;">
+    <%= link_to "Finalize Session", finalize_observation_session_path(@session), class: "btn btn-primary" %>
+    <%# Add note form %>
+    <details style="display:inline-block;">
+      <summary class="btn" style="background:#f1f5f9; color:#1e293b; cursor:pointer;">+ Add Note</summary>
+      <div class="card" style="margin-top:.5rem; min-width:350px;">
+        <%= form_with url: observation_session_observation_notes_path(@session), local: true do |f| %>
+          <%= f.hidden_field :_model, value: "observation_note" %>
+          <%= form_with model: [observation_session_path(@session), ObservationNote.new], local: true, url: observation_session_observation_notes_path(@session) do |nf| %>
+            <label>Note</label>
+            <%= nf.text_area :content %>
+            <%= nf.submit "Save Note", class: "btn btn-primary btn-sm" %>
+          <% end %>
+        <% end %>
+      </div>
+    </details>
+  </div>
+<% end %>
+
+<% if @session.reports.any? %>
+  <h2>Reports</h2>
+  <% @session.reports.order(created_at: :desc).each do |report| %>
+    <div class="card">
+      <span class="badge badge-<%= report.status %>"><%= report.status %></span>
+      Generated <%= time_ago_in_words(report.created_at) %> ago
+      &nbsp;
+      <%= link_to "View Report", report_path(report), class: "btn btn-sm btn-primary" if report.complete? %>
+    </div>
+  <% end %>
+<% end %>

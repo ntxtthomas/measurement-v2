@@ -1,0 +1,20 @@
+<% content_for :title, "New Observation Session" %>
+<h1>New Observation Session</h1>
+<div class="card">
+  <%= form_with model: @session, local: true do |f| %>
+    <label>Classroom</label>
+    <%= f.select :classroom_id,
+          options_from_collection_for_select(@classrooms, :id, :name, params[:classroom_id]),
+          { include_blank: "— select classroom —" } %>
+
+    <label>Teacher</label>
+    <%= f.select :teacher_id,
+          options_from_collection_for_select(@teachers, :id, :full_name),
+          { include_blank: "— select teacher —" } %>
+
+    <label>Observation Date</label>
+    <%= f.date_field :observed_on, value: Date.today %>
+
+    <%= f.submit "Start Session", class: "btn btn-primary" %>
+  <% end %>
+</div>

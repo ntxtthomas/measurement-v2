@@ -1,0 +1,71 @@
+<% content_for :title, "Report" %>
+
+<% if @parsed.nil? %>
+  <div class="flash-alert">Report content could not be parsed.</div>
+<% else %>
+  <h1>Observation Report</h1>
+  <p style="color:#64748b; margin-bottom:1.5rem;">
+    Generated <%= @report.created_at.strftime("%B %d, %Y at %H:%M") %>
+    &nbsp;·&nbsp;
+    <span class="badge badge-<%= @report.status %>"><%= @report.status %></span>
+  </p>
+
+  <% info = @parsed["session"] %>
+  <% if info %>
+    <div class="card">
+      <h2>Session Info</h2>
+      <table style="width:auto;">
+        <tr><th>Observer</th><td><%= info["observer_name"] %></td></tr>
+        <tr><th>Classroom</th><td><%= info["classroom"] %></td></tr>
+        <tr><th>Teacher</th><td><%= info["teacher"] %></td></tr>
+        <tr><th>School</th><td><%= info["school"] %></td></tr>
+        <tr><th>Organization</th><td><%= info["organization"] %></td></tr>
+        <tr><th>Date</th><td><%= info["date"] %></td></tr>
+      </table>
+    </div>
+  <% end %>
+
+  <% if @parsed["scores"]&.any? %>
+    <div class="card">
+      <h2>Scores</h2>
+      <table>
+        <thead><tr><th>Code</th><th>Dimension</th><th>Score</th><th>Level</th></tr></thead>
+        <tbody>
+          <% @parsed["scores"].each do |code, data| %>
+            <tr>
+              <td><code><%= code %></code></td>
+              <td><%= data["name"] %></td>
+              <td><strong><%= data["score"] %></strong> / <%= data["max"] %></td>
+              <td><span class="badge badge-<%= data["level"]&.downcase %>"><%= data["level"] %></span></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% end %>
+
+  <% if @parsed["category_averages"]&.any? %>
+    <div class="card">
+      <h2>Category Averages</h2>
+      <% @parsed["category_averages"].each do |category, avg| %>
+        <div style="margin-bottom:.75rem;">
+          <div style="display:flex; justify-content:space-between; font-size:.85rem; margin-bottom:.25rem;">
+            <span><%= category %></span>
+            <strong><%= avg ? number_with_precision(avg, precision: 2) : "—" %></strong>
+          </div>
+          <% if avg %>
+            <div class="progress-bar-outer">
+              <div class="progress-bar-inner" style="width:<%= [(avg.to_f / 7 * 100).round, 100].min %>%;"></div>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+
+  <div style="margin-top:1.5rem;">
+    <%= link_to "View Session", observation_session_path(@session), class: "btn btn-primary" %>
+    &nbsp;
+    <%= button_to "Regenerate Report", regenerate_report_path(@report), method: :post, class: "btn", style: "background:#f1f5f9;" %>
+  </div>
+<% end %>

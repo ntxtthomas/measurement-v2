@@ -1,0 +1,31 @@
+<% content_for :title, "My Sessions" %>
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+  <h1>My Observation Sessions</h1>
+  <%= link_to "New Session", new_observation_session_path, class: "btn btn-primary" %>
+</div>
+
+<div class="card" style="padding:0;">
+  <table>
+    <thead>
+      <tr><th>Date</th><th>Classroom</th><th>Teacher</th><th>Status</th><th>Completion</th><th></th></tr>
+    </thead>
+    <tbody>
+      <% @sessions.each do |s| %>
+        <tr>
+          <td><%= s.observed_on.strftime("%b %d, %Y") %></td>
+          <%# SMELL: classroom and teacher loaded per row — N+1 %>
+          <td><%= link_to s.classroom.name, classroom_path(s.classroom) %></td>
+          <td><%= s.teacher.full_name %></td>
+          <td><span class="badge badge-<%= s.status %>"><%= s.status.humanize %></span></td>
+          <td><%= s.completion_rate %>%</td>
+          <td>
+            <%= link_to "View", observation_session_path(s), class: "btn btn-sm btn-primary" %>
+            <% unless s.finalized? || s.cancelled? %>
+              &nbsp;<%= link_to "Finalize", finalize_observation_session_path(s), class: "btn btn-sm", style: "background:#f1f5f9;" %>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

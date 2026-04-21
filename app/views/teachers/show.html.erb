@@ -1,0 +1,29 @@
+<% content_for :title, @teacher.full_name %>
+<p style="color:#64748b; margin-bottom:.5rem;">
+  <%= link_to @teacher.school.organization.name, organization_path(@teacher.school.organization) %> /
+  <%= link_to @teacher.school.name, school_path(@teacher.school) %>
+</p>
+<h1><%= @teacher.full_name %></h1>
+<div style="display:flex; gap:2rem; margin-bottom:1.5rem; flex-wrap:wrap;">
+  <div><strong><%= @teacher.total_sessions %></strong> <span style="color:#64748b;">sessions</span></div>
+  <div><strong><%= @teacher.average_score_cache ? number_with_precision(@teacher.average_score_cache, precision: 2) : "—" %></strong> <span style="color:#64748b;">avg score</span></div>
+</div>
+
+<h2>Observation Sessions</h2>
+<div class="card" style="padding:0;">
+  <table>
+    <thead><tr><th>Date</th><th>Classroom</th><th>Observer</th><th>Status</th><th>Avg Score</th><th></th></tr></thead>
+    <tbody>
+      <% @sessions.each do |s| %>
+        <tr>
+          <td><%= s.observed_on.strftime("%b %d, %Y") %></td>
+          <td><%= link_to s.classroom.name, classroom_path(s.classroom) %></td>
+          <td><%= s.observer.user.full_name %></td>
+          <td><span class="badge badge-<%= s.status %>"><%= s.status.humanize %></span></td>
+          <td><%= s.average_score ? number_with_precision(s.average_score, precision: 2) : "—" %></td>
+          <td><%= link_to "View", observation_session_path(s), class: "btn btn-sm btn-primary" %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

@@ -1,0 +1,19 @@
+# Add more rules before the final * line
+/.bundle
+/log/*
+/tmp/*
+!/log/.keep
+!/tmp/.keep
+/node_modules
+/yarn-error.log
+/public/assets
+/public/packs
+.env
+.env.local
+.env*.local
+*.swp
+.DS_Store
+/storage/*
+!/storage/.keep
+/config/master.key
+/config/credentials/*.key

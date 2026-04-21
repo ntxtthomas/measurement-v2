@@ -1,0 +1,21 @@
+<% content_for :title, @organization.name %>
+
+<h1><%= @organization.name %></h1>
+<p style="color:#64748b; margin-bottom:1.5rem;"><%= @organization.contact_email %></p>
+
+<h2>Schools</h2>
+<% @schools.each do |school| %>
+  <div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <div>
+        <strong><%= link_to school.name, school_path(school) %></strong><br>
+        <small style="color:#64748b;"><%= [school.city, school.state].compact.join(", ") %></small>
+      </div>
+      <%# SMELL: classrooms.count and teachers.count fire per-school queries in the view %>
+      <div style="text-align:right; font-size:.85rem; color:#64748b;">
+        <%= school.classrooms.count %> classrooms &nbsp;·&nbsp;
+        <%= school.teachers.count %> teachers
+      </div>
+    </div>
+  </div>
+<% end %>

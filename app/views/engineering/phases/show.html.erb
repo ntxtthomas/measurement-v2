@@ -1,0 +1,42 @@
+<% content_for :title, @phase.name %>
+<p style="color:#64748b;"><%= link_to "Engineering Dashboard", engineering_root_path %> / <%= @phase.name %></p>
+
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+  <h1><%= @phase.name %></h1>
+  <span style="font-size:1.5rem; font-weight:700; color:<%= @phase.color %>;">
+    <%= @phase.completion_percentage %>%
+  </span>
+</div>
+
+<div class="progress-bar-outer" style="margin-bottom:2rem; height:12px;">
+  <div class="progress-bar-inner" style="width:<%= @phase.completion_percentage %>%; background:<%= @phase.color %>;"></div>
+</div>
+
+<% @epics.each do |epic| %>
+  <div class="card" style="margin-bottom:1.5rem;">
+    <h2><%= epic.name %></h2>
+    <p style="color:#64748b; font-size:.85rem; margin-bottom:.75rem;"><%= epic.description %></p>
+
+    <% epic.stories.each do |story| %>
+      <div style="margin-bottom:1.25rem; padding-left:.75rem; border-left:3px solid #e2e8f0;">
+        <div style="display:flex; justify-content:space-between; margin-bottom:.3rem;">
+          <strong style="font-size:.9rem;"><%= story.name %></strong>
+          <span style="font-size:.8rem; color:#64748b;"><%= story.completion_percentage %>%</span>
+        </div>
+        <p style="font-size:.8rem; color:#94a3b8; margin-bottom:.5rem;"><%= story.description %></p>
+
+        <% story.tasks.ordered.each do |task| %>
+          <div style="display:flex; align-items:center; gap:.75rem; padding:.4rem 0; border-bottom:1px solid #f1f5f9;">
+            <span class="badge badge-<%= task.status %>"><%= task.status.humanize %></span>
+            <span style="flex:1; font-size:.875rem;"><%= task.name %></span>
+            <%= form_with model: [:engineering, task], method: :patch, local: true, style: "display:inline;" do |f| %>
+              <%= f.select :status, Task.statuses.keys.map { |s| [s.humanize, s] },
+                    { selected: task.status }, style: "font-size:.8rem; padding:.2rem .4rem; border:1px solid #cbd5e1; border-radius:4px;" %>
+              <%= f.submit "Save", class: "btn btn-sm", style: "background:#f1f5f9; padding:.2rem .5rem;" %>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+<% end %>

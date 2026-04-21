@@ -1,0 +1,8 @@
+<% content_for :title, "Organizations" %>
+<h1>Organizations</h1>
+<% @organizations.each do |org| %>
+  <div class="card">
+    <strong><%= link_to org.name, organization_path(org) %></strong>
+    <span style="float:right; color:#64748b; font-size:.85rem;"><%= org.status %></span>
+  </div>
+<% end %>

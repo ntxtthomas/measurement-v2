@@ -1,0 +1,19 @@
+<% content_for :title, @student.full_name %>
+<h1><%= @student.full_name %></h1>
+<p style="color:#64748b; margin-bottom:1.5rem;">
+  <%= link_to @student.classroom.name, classroom_path(@student.classroom) %>
+  &nbsp;·&nbsp; DOB: <%= @student.date_of_birth&.strftime("%b %d, %Y") || "—" %>
+</p>
+
+<h2>Observation Notes (<%= @notes.count %>)</h2>
+<%# SMELL: @notes renders classroom → teacher → observer chain — N+1 %>
+<% @notes.each do |note| %>
+  <div class="card">
+    <p style="font-size:.8rem; color:#94a3b8; margin-bottom:.4rem;">
+      Session: <%= link_to note.observation_session.observed_on.strftime("%b %d, %Y"),
+                           observation_session_path(note.observation_session) %>
+      &nbsp;·&nbsp; Observer: <%= note.observer.user.full_name %>
+    </p>
+    <p><%= note.content %></p>
+  </div>
+<% end %>
