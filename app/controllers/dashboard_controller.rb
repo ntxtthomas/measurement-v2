@@ -27,7 +27,8 @@
 class DashboardController < ApplicationController
   def index
     # SMELL: No eager loading. Each call below triggers additional queries.
-    @organizations = Organization.active.order(:name)
+    # @organizations = Organization.active.order(:name)
+    @organizations = Organization.active.includes(schools: { classrooms: [:students, :observation_sessions] }).order(:name)
 
     # SMELL: Computing stats entirely in Ruby — no SQL aggregation.
     # At 20 orgs this is already slow. At 200 it is unusable.

@@ -37,6 +37,8 @@ group :development do
   gem "web-console"
   gem "rack-mini-profiler"   # Helpful for spotting slow queries locally
   gem "bullet"               # N+1 detection — see config/environments/development.rb
+  gem "stackprof"            # Interactive flame graph visualization to diagnose deep call stack performance issues 
+  gem "flamegraph"           # Interactive flame graph visualization to diagnose deep call stack performance issues 
   gem "annotate"             # Schema annotations on models
 end
 

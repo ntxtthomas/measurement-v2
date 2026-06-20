@@ -17,3 +17,5 @@
 !/storage/.keep
 /config/master.key
 /config/credentials/*.key
+/docs/*
+/docs

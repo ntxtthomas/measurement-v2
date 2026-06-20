@@ -24,8 +24,9 @@ Use this file to record debugging investigations. One entry per bug or performan
 ### I — Inspect
 - What do you observe? (log output, query count, stack trace, test failure)
 - Paste relevant log lines or EXPLAIN ANALYZE output here:
-  ```
-  ```
+```
+
+```
 - What queries are being made?
 
 ### H — Hypothesize
@@ -54,17 +55,21 @@ Use this file to record debugging investigations. One entry per bug or performan
 
 ## Example Entry
 
-## [2024-01-20] — Dashboard N+1: org stats table
+## [2026-06-20] — Dashboard N+1: org stats table
 
 ### R — Reproduce
+
 Found from Bullet footer warning: "USE eager loading detected: Organization => [:schools]"
 Steps: sign in, load dashboard `/`.
 
 ### S — Simplify
+
 Reproduced in a test: create 3 orgs, each with 3 schools. Dashboard makes 13 queries.
 
 ### I — Inspect
+
 Bullet log output:
+
 ```
 N+1 Query: Organization#schools
 N+1 Query: School#classrooms
@@ -73,16 +78,28 @@ N+1 Query: Classroom#observation_sessions
 ```
 
 ### H — Hypothesize
+
 `DashboardController#index` loads `Organization.all` without eager loading,
 then iterates in Ruby calling `org.schools` per org, `school.classrooms` per school, etc.
 
 ### E — Experiment
+
+Switched to a bug/ branch to safely expirement
+Before:
+
+1. benchmark tests (using 20x Rails request log lines. Average load time: 3914ms)
+2. rack-mini-profiler (total duration, SQL duration, number of SQL queries, and the slowest queries)
+3. stackprof/flamegraph (see where Ruby time is going)
+
 Added `Organization.active.includes(schools: { classrooms: [:students, :observation_sessions] })`
-Query count dropped from 83 to 4 with seed data.
+After: repeated benchmark tests, rack-mini-profiler tests, and stackprof/flamegraph tests
+Query count benchmark tests dropped from average of 3914ms to \_\*\* with seed data.
 
 ### V — Verify
+
 Test passes. Query count confirmed via rack-mini-profiler.
 
 ### L — Learn
+
 Classic N+1. The fix is always eager loading or SQL aggregation.
 The dashboard still has no caching — that's a Phase 5 task.
