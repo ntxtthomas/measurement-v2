@@ -26,8 +26,6 @@
 # =============================================================================
 class DashboardController < ApplicationController
   def index
-    # SMELL: No eager loading. Each call below triggers additional queries.
-    # @organizations = Organization.active.order(:name)
     @organizations = Organization.active.includes(schools: { classrooms: [:students, :observation_sessions] }).order(:name)
 
     # SMELL: Computing stats entirely in Ruby — no SQL aggregation.
@@ -43,9 +41,9 @@ class DashboardController < ApplicationController
         classrooms = school.classrooms # N+1: one query per school
 
         classrooms.each do |classroom|
-          student_count   += classroom.students.count           # N+1 per classroom
+          student_count   += classroom.students.size           # N+1 per classroom
           sessions         = classroom.observation_sessions     # N+1 per classroom
-          session_count   += sessions.count
+          session_count   += sessions.size
           # SMELL: select(&:finalized?) loads all session objects into Ruby
           finalized_count += sessions.select(&:finalized?).count
         end
@@ -53,7 +51,7 @@ class DashboardController < ApplicationController
 
       {
         org:             org,
-        school_count:    schools.count,
+        school_count:    schools.size,
         session_count:   session_count,
         finalized_count: finalized_count,
         student_count:   student_count
@@ -67,14 +65,10 @@ class DashboardController < ApplicationController
     # SMELL: Loading ALL finalized sessions to compute overall average in Ruby.
     # Should be: ObservationSession.joins(:observation_scores).where(status: :finalized)
     #              .average("observation_scores.score")
-    all_finalized = ObservationSession.where(status: :finalized)
-    @overall_average = if all_finalized.any?
-      all_finalized.map { |s|
-        s.observation_scores.sum(:score).to_f / [s.observation_scores.count, 1].max
-      }.sum.to_f / all_finalized.count
-    else
-      0
-    end
+    ave = ObservationSession.joins(:observation_scores)
+                            .where(status: :finalized)
+                            .average("observation_scores.score")
+    @overall_average = ave || 0
 
     # SMELL: COUNT(*) on the full table every request — no caching
     @total_sessions = ObservationSession.count
