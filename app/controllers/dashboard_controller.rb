@@ -53,7 +53,9 @@ class DashboardController < ApplicationController
     # SMELL: Separate query for recent sessions — no eager loading, will N+1 in the view
     # (observer.user, classroom.school etc. all trigger extra queries when rendered)
     # @recent_sessions = ObservationSession.order(created_at: :desc).limit(20)
-    @recent_sessions = ObservationSession.order(created_at: :desc).limit(20)
+    @recent_sessions = ObservationSession.includes(observer: :user, classroom: :school)
+                            .order(created_at: :desc)
+                            .limit(20)
 
     ave = ObservationSession.joins(:observation_scores)
                             .where(status: :finalized)
