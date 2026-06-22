@@ -26,45 +26,35 @@
 # =============================================================================
 class DashboardController < ApplicationController
   def index
-    @organizations = Organization.active.includes(schools: { classrooms: [:students, :observation_sessions] }).order(:name)
-
     # SMELL: Computing stats entirely in Ruby — no SQL aggregation.
     # At 20 orgs this is already slow. At 200 it is unusable.
-    @org_stats = @organizations.map do |org|
-      schools = org.schools # N+1: one query per org
-
-      session_count   = 0
-      finalized_count = 0
-      student_count   = 0
-
-      schools.each do |school|
-        classrooms = school.classrooms # N+1: one query per school
-
-        classrooms.each do |classroom|
-          student_count   += classroom.students.size           # N+1 per classroom
-          sessions         = classroom.observation_sessions     # N+1 per classroom
-          session_count   += sessions.size
-          # SMELL: select(&:finalized?) loads all session objects into Ruby
-          finalized_count += sessions.select(&:finalized?).count
-        end
-      end
-
-      {
-        org:             org,
-        school_count:    schools.size,
-        session_count:   session_count,
-        finalized_count: finalized_count,
-        student_count:   student_count
-      }
-    end
+    # REFACTORED: Now using single GROUP BY query with DISTINCT counts to avoid row multiplication
+    @org_stats = Organization.active
+                  .joins(schools: { classrooms: [:students, :observation_sessions] })
+                  .group("organizations.id", "organizations.name")
+                  .select(
+                    "organizations.*",
+                    "COUNT(DISTINCT schools.id) AS school_count",
+                    "COUNT(DISTINCT students.id) AS student_count",
+                    "COUNT(DISTINCT observation_sessions.id) AS session_count",
+                    "COUNT(DISTINCT CASE WHEN observation_sessions.status = 2 THEN observation_sessions.id END) AS finalized_count"
+                  )
+                  .order(:name)
+                  .map do |row|
+                    {
+                      org: row,
+                      school_count: row.school_count,
+                      session_count: row.session_count,
+                      finalized_count: row.finalized_count,
+                      student_count: row.student_count
+                    }
+                  end
 
     # SMELL: Separate query for recent sessions — no eager loading, will N+1 in the view
     # (observer.user, classroom.school etc. all trigger extra queries when rendered)
+    # @recent_sessions = ObservationSession.order(created_at: :desc).limit(20)
     @recent_sessions = ObservationSession.order(created_at: :desc).limit(20)
 
-    # SMELL: Loading ALL finalized sessions to compute overall average in Ruby.
-    # Should be: ObservationSession.joins(:observation_scores).where(status: :finalized)
-    #              .average("observation_scores.score")
     ave = ObservationSession.joins(:observation_scores)
                             .where(status: :finalized)
                             .average("observation_scores.score")
